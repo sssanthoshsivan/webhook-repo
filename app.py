@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, render_template
 from dotenv import load_dotenv
 from db import events
+from datetime import datetime, timedelta
 from handlers import handle_push, handle_pr
 
 load_dotenv()
@@ -35,8 +36,14 @@ def webhook():
 
 @app.route("/events", methods=["GET"])
 def get_events():
+    # Only fetch events from the last 5 minutes
+    cutoff = datetime.utcnow() - timedelta(minutes=5)
+
     data = list(
-        events.find({}, {"_id": 0})
+        events.find(
+            {"created_at": {"$gte": cutoff}},
+            {"_id": 0}
+        )
         .sort("created_at", -1)
         .limit(10)
     )
